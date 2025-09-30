@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+
+@custom-variant dark ([data-theme="dark"] &);
+
+:root {
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+}
+
+[data-theme='dark'] {
+    --background: 15, 19, 30;
+    --foreground: 229 231 235;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    background: rgb(var(--background));
+    color: rgb(var(--foreground));
+    font-family:
+        var(--font-sans),
+        system-ui,
+        -apple-system,
+        sans-serif;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+    min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: rgb(var(--foreground));
+    font-weight: 600;
+}
+
+h3 {
+    color: rgb(var(--card-foreground));
+}
+
+@layer base {
+    * {
+        border-color: rgb(var(--border));
+    }
+}
+
+/* Utility class for properly styled links */
+.link {
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-weight: 500;
+}
+
+.link:hover {
+    color: #1e40af;
+}
+
+/* Basic button hover cursor */
+button:hover {
+    cursor: pointer;
+}
