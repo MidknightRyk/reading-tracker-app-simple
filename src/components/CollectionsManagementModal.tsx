@@ -91,15 +91,41 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
     return (
         <>
             <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
-                <DialogBackdrop className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                <DialogBackdrop
+                    className={`
+                        bg-opacity-75 fixed inset-0 bg-gray-500 transition-opacity
+                        dark:bg-opacity-75 dark:bg-gray-900
+                    `}
+                />
 
                 <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-                    <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                        <DialogPanel className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:p-6">
-                            <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+                    <div
+                        className={`
+                            flex min-h-full items-end justify-center p-4 text-center
+                            sm:items-center sm:p-0
+                        `}
+                    >
+                        <DialogPanel
+                            className={`
+                                relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left
+                                shadow-xl transition-all
+                                sm:my-8 sm:w-full sm:max-w-4xl sm:p-6
+                                dark:bg-gray-800
+                            `}
+                        >
+                            <div
+                                className={`
+                                    absolute top-0 right-0 hidden pt-4 pr-4
+                                    sm:block
+                                `}
+                            >
                                 <button
                                     type="button"
-                                    className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    className={`
+                                        rounded-md bg-white text-gray-400
+                                        hover:text-gray-500
+                                        focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none
+                                    `}
                                     onClick={handleClose}
                                 >
                                     <span className="sr-only">Close</span>
@@ -109,19 +135,25 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
 
                             <div className="sm:flex sm:items-start">
                                 <div className="w-full">
-                                    <DialogTitle as="h3" className="text-base font-semibold leading-6 text-gray-900">
+                                    <DialogTitle as="h3" className="text-base leading-6 font-semibold text-gray-900">
                                         Manage Collections
                                     </DialogTitle>
 
                                     <div className="mt-4">
-                                        <div className="flex items-center justify-between mb-6">
+                                        <div className="mb-6 flex items-center justify-between">
                                             <p className="text-sm text-gray-500">
                                                 Organize your books into collections. You can create, edit, and delete
                                                 collections here.
                                             </p>
                                             <button
                                                 onClick={() => setIsCollectionFormOpen(true)}
-                                                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                                className={`
+                                                    inline-flex items-center rounded-md border border-transparent
+                                                    bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm
+                                                    hover:bg-blue-700
+                                                    focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                                                    focus:outline-none
+                                                `}
                                             >
                                                 <PlusIcon className="mr-2 h-4 w-4" />
                                                 Add Collection
@@ -129,7 +161,7 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                         </div>
 
                                         {collections.length === 0 ? (
-                                            <div className="text-center py-12">
+                                            <div className="py-12 text-center">
                                                 <ViewColumnsIcon className="mx-auto h-12 w-12 text-gray-400" />
                                                 <h3 className="mt-2 text-sm font-medium text-gray-900">
                                                     No collections
@@ -140,7 +172,12 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                                 <div className="mt-6">
                                                     <button
                                                         onClick={() => setIsCollectionFormOpen(true)}
-                                                        className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+                                                        className={`
+                                                            inline-flex items-center rounded-md border
+                                                            border-transparent bg-blue-600 px-4 py-2 text-sm font-medium
+                                                            text-white shadow-sm
+                                                            hover:bg-blue-700
+                                                        `}
                                                     >
                                                         <PlusIcon className="mr-2 h-4 w-4" />
                                                         Add Collection
@@ -149,7 +186,12 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                             </div>
                                         ) : (
                                             <div className="max-h-96 overflow-y-auto">
-                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                <div
+                                                    className={`
+                                                        grid grid-cols-1 gap-4
+                                                        sm:grid-cols-2
+                                                    `}
+                                                >
                                                     {collections.map((collection) => {
                                                         const bookCount = dataService.getBooksByCollection(
                                                             collection.id
@@ -157,13 +199,26 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                                         return (
                                                             <div
                                                                 key={collection.id}
-                                                                className="rounded-lg border border-gray-200 p-4 hover:border-gray-300 transition-colors"
+                                                                className={`
+                                                                    rounded-lg border border-gray-200 p-4
+                                                                    transition-colors
+                                                                    hover:border-gray-300
+                                                                `}
                                                             >
                                                                 <div className="flex items-center justify-between">
                                                                     <div className="flex items-center">
-                                                                        <ViewColumnsIcon className="h-8 w-8 text-blue-500 flex-shrink-0" />
+                                                                        <ViewColumnsIcon
+                                                                            className={`
+                                                                                h-8 w-8 flex-shrink-0 text-blue-500
+                                                                            `}
+                                                                        />
                                                                         <div className="ml-3 min-w-0 flex-1">
-                                                                            <h3 className="text-lg font-medium text-gray-900 truncate">
+                                                                            <h3
+                                                                                className={`
+                                                                                    truncate text-lg font-medium
+                                                                                    text-gray-900
+                                                                                `}
+                                                                            >
                                                                                 {collection.title}
                                                                             </h3>
                                                                             <p className="text-sm text-gray-500">
@@ -171,13 +226,18 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                                                             </p>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex space-x-2 flex-shrink-0">
+                                                                    <div className="flex flex-shrink-0 space-x-2">
                                                                         <button
                                                                             onClick={() => {
                                                                                 setEditingCollection(collection);
                                                                                 setIsCollectionFormOpen(true);
                                                                             }}
-                                                                            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-1"
+                                                                            className={`
+                                                                                rounded p-1 text-gray-400
+                                                                                hover:text-gray-600
+                                                                                focus:ring-2 focus:ring-blue-500
+                                                                                focus:outline-none
+                                                                            `}
                                                                         >
                                                                             <PencilIcon className="h-5 w-5" />
                                                                         </button>
@@ -188,7 +248,12 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                                                                         collection.id
                                                                                     )
                                                                                 }
-                                                                                className="text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded p-1"
+                                                                                className={`
+                                                                                    rounded p-1 text-gray-400
+                                                                                    hover:text-red-600
+                                                                                    focus:ring-2 focus:ring-red-500
+                                                                                    focus:outline-none
+                                                                                `}
                                                                             >
                                                                                 <TrashIcon className="h-5 w-5" />
                                                                             </button>
@@ -196,7 +261,7 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                                                     </div>
                                                                 </div>
                                                                 <div className="mt-4">
-                                                                    <p className="text-gray-700 text-sm line-clamp-2">
+                                                                    <p className="line-clamp-2 text-sm text-gray-700">
                                                                         {collection.description}
                                                                     </p>
                                                                 </div>
@@ -216,10 +281,20 @@ export default function CollectionsManagementModal({ isOpen, onClose, onUpdate }
                                 </div>
                             </div>
 
-                            <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                            <div
+                                className={`
+                                    mt-5
+                                    sm:mt-4 sm:flex sm:flex-row-reverse
+                                `}
+                            >
                                 <button
                                     type="button"
-                                    className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                    className={`
+                                        mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm
+                                        font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 ring-inset
+                                        hover:bg-gray-50
+                                        sm:mt-0 sm:w-auto
+                                    `}
                                     onClick={handleClose}
                                 >
                                     Close

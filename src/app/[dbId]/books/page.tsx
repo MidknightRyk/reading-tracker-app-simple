@@ -10,8 +10,19 @@ import CollectionsManagementModal from '@/components/CollectionsManagementModal'
 import StyledDropdown from '@/components/StyledDropdown';
 import { dataService } from '@/services/dataService';
 import { Book, Collection, BookStatus } from '@/types';
-import { PlusIcon, PencilIcon, TrashIcon, Cog6ToothIcon, BookOpenIcon } from '@heroicons/react/24/outline';
+import {
+    PlusIcon,
+    PencilIcon,
+    TrashIcon,
+    Cog6ToothIcon,
+    BookOpenIcon,
+    ClockIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+    PauseCircleIcon,
+} from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+import { BuildingLibraryIcon } from '@heroicons/react/24/outline';
 
 type SortField = 'title' | 'author' | 'rating' | 'status' | 'collection';
 type SortDirection = 'asc' | 'desc';
@@ -206,7 +217,20 @@ export default function BooksPage() {
 
     const renderStars = (rating: number) => {
         return Array.from({ length: 5 }, (_, i) => (
-            <StarIconSolid key={i} className={`h-4 w-4 ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+            <StarIconSolid
+                key={i}
+                className={`
+                    h-4 w-4
+                    ${
+                        i < rating
+                            ? 'text-yellow-400 dark:text-yellow-300'
+                            : `
+                                text-gray-300
+                                dark:text-gray-600
+                            `
+                    }
+                `}
+            />
         ));
     };
 
@@ -215,25 +239,67 @@ export default function BooksPage() {
         return sortDirection === 'asc' ? ' ↑' : ' ↓';
     };
 
+    const getStatusIcon = (status: string) => {
+        const iconClass = 'ml-6 mr-1 h-7 w-7';
+        switch (status) {
+            case 'TBR':
+                return <ClockIcon className={`${iconClass} text-yellow-600 dark:text-yellow-400`} />;
+            case 'Reading':
+                return <BookOpenIcon className={`${iconClass} text-blue-600 dark:text-blue-400`} />;
+            case 'Read':
+                return <CheckCircleIcon className={`${iconClass} text-green-600 dark:text-green-400`} />;
+            case 'DNF':
+                return <XCircleIcon className={`${iconClass} text-red-600 dark:text-red-400`} />;
+            case 'On Hold':
+                return <PauseCircleIcon className={`${iconClass} text-gray-600 dark:text-gray-400`} />;
+            default:
+                return <BookOpenIcon className={`${iconClass} text-gray-600 dark:text-gray-400`} />;
+        }
+    };
+
     return (
         <Layout dbId={dbId}>
-            <div className="px-4 sm:px-6 lg:px-8">
+            <div
+                className={`
+                    px-4
+                    sm:px-6
+                    lg:px-8
+                `}
+            >
                 <div className="sm:flex sm:items-center sm:justify-between">
                     <div className="sm:flex-auto">
-                        <h1 className="text-2xl font-semibold leading-6 text-gray-900">Books</h1>
-                        <p className="mt-2 text-sm text-gray-700">
+                        <h1
+                            className={`
+                                text-2xl leading-6 font-semibold text-gray-900
+                                dark:text-white
+                            `}
+                        >
+                            Books
+                        </h1>
+                        <p
+                            className={`
+                                mt-2 text-sm text-gray-700
+                                dark:text-gray-300
+                            `}
+                        >
                             A list of all the books in your reading tracker including their title, author, rating,
                             status, and collection.
                         </p>
                     </div>
-                    <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex space-x-3">
+                    <div
+                        className={`
+                            mt-4 flex space-x-3
+                            sm:mt-0 sm:ml-16 sm:flex-none
+                        `}
+                    >
                         <button
                             type="button"
                             onClick={() => setIsCollectionsManagementOpen(true)}
                             className={`
-                                inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2
-                                text-sm font-medium text-gray-700 shadow-sm
+                                inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm
+                                font-medium text-gray-700 shadow-sm
                                 hover:bg-gray-50
+                                dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600
                             `}
                         >
                             <Cog6ToothIcon className="mr-2 h-4 w-4" />
@@ -246,6 +312,7 @@ export default function BooksPage() {
                                 inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2
                                 text-sm font-medium text-white shadow-sm
                                 hover:bg-blue-700
+                                dark:bg-blue-500 dark:hover:bg-blue-400
                             `}
                         >
                             <PlusIcon className="mr-2 h-4 w-4" />
@@ -255,47 +322,36 @@ export default function BooksPage() {
                 </div>
 
                 {/* Reading Status and Total Books */}
-                <div className="mt-6 flex gap-6">
+                <div className="mt-10 mb-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
                     {/* Total Books Card */}
-                    <div className="flex-shrink-0 overflow-hidden rounded-lg bg-white shadow">
-                        <div className="p-6">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <BookOpenIcon className="h-6 w-6 text-blue-600" />
-                                </div>
-                                <div className="ml-3">
-                                    <div className="text-sm font-medium text-gray-500">Total Books</div>
-                                    <div className="text-2xl font-bold text-gray-900">{books.length}</div>
-                                </div>
-                            </div>
+                    <div className="rounded-lg bg-white shadow dark:bg-gray-800 flex items-center py-3 pr-9 min-w-[120px]">
+                        <div className="flex-shrink-0">
+                            <BuildingLibraryIcon className="ml-7 h-7 w-7 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="ml-3 flex flex-col items-center justify-center text-center w-full">
+                            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Total</div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">{books.length}</div>
                         </div>
                     </div>
-
-                    {/* Reading Status */}
-                    <div className="flex-1 overflow-hidden rounded-lg bg-white shadow">
-                        <div className="p-6">
-                            <div
-                                className={`
-                                    grid grid-cols-2 gap-4
-                                    sm:grid-cols-3
-                                    lg:grid-cols-5
-                                `}
-                            >
-                                {Object.entries(statusCounts).map(([status, count]) => (
-                                    <div key={status} className="text-center">
-                                        <div className="text-2xl font-bold text-gray-900">{count}</div>
-                                        <div className="text-sm text-gray-500">
-                                            {status === 'TBR' ? 'To Be Read' : status}
-                                        </div>
-                                    </div>
-                                ))}
+                    {/* Reading Status Cards */}
+                    {Object.entries(statusCounts).map(([status, count]) => (
+                        <div
+                            key={status}
+                            className="rounded-lg bg-white shadow dark:bg-gray-800 flex items-center py-3 pr-9 min-w-[120px]"
+                        >
+                            <div className="flex-shrink-0">{getStatusIcon(status)}</div>
+                            <div className="ml-3 flex flex-col items-center justify-center text-center w-full">
+                                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    {status === 'On Hold' ? 'Pending' : status}
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900 dark:text-white">{count}</div>
                             </div>
                         </div>
-                    </div>
+                    ))}
                 </div>
 
                 {/* Filters */}
-                <div className="mt-6 rounded-lg bg-white p-4 shadow">
+                <div className="mt-6 rounded-lg bg-white p-4 shadow dark:bg-gray-800">
                     <div
                         className={`
                             grid grid-cols-1 gap-4
@@ -303,7 +359,10 @@ export default function BooksPage() {
                         `}
                     >
                         <div>
-                            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">
+                            <label
+                                htmlFor="status-filter"
+                                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                            >
                                 Filter by Status
                             </label>
                             <div className="mt-1">
@@ -315,7 +374,10 @@ export default function BooksPage() {
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="collection-filter" className="block text-sm font-medium text-gray-700">
+                            <label
+                                htmlFor="collection-filter"
+                                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                            >
                                 Filter by Collection
                             </label>
                             <div className="mt-1">
@@ -331,43 +393,80 @@ export default function BooksPage() {
 
                 {/* Table */}
                 <div className="mt-8 flow-root">
-                    <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                        <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-                                <table className="min-w-full divide-y divide-gray-300">
-                                    <thead className="bg-gray-50">
+                    <div
+                        className={`
+                            -mx-4 -my-2 overflow-x-auto
+                            sm:-mx-6
+                            lg:-mx-8
+                        `}
+                    >
+                        <div
+                            className={`
+                                inline-block min-w-full py-2 align-middle
+                                sm:px-6
+                                lg:px-8
+                            `}
+                        >
+                            <div
+                                className={`
+                                    ring-opacity-5 overflow-hidden shadow ring-1 ring-black
+                                    sm:rounded-lg dark:ring-gray-700
+                                `}
+                            >
+                                <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+                                    <thead className="bg-gray-50 dark:bg-gray-700">
                                         <tr>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 cursor-pointer hover:bg-gray-100"
+                                                className={`
+                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
+                                                    text-gray-500 uppercase dark:text-gray-300
+                                                    hover:bg-gray-100 dark:hover:bg-gray-600
+                                                `}
                                                 onClick={() => handleSort('title')}
                                             >
                                                 Title{getSortIcon('title')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 cursor-pointer hover:bg-gray-100"
+                                                className={`
+                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
+                                                    text-gray-500 uppercase dark:text-gray-300
+                                                    hover:bg-gray-100 dark:hover:bg-gray-600
+                                                `}
                                                 onClick={() => handleSort('author')}
                                             >
                                                 Author{getSortIcon('author')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 cursor-pointer hover:bg-gray-100"
+                                                className={`
+                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
+                                                    text-gray-500 uppercase dark:text-gray-300
+                                                    hover:bg-gray-100 dark:hover:bg-gray-600
+                                                `}
                                                 onClick={() => handleSort('rating')}
                                             >
                                                 Rating{getSortIcon('rating')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 cursor-pointer hover:bg-gray-100"
+                                                className={`
+                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
+                                                    text-gray-500 uppercase dark:text-gray-300
+                                                    hover:bg-gray-100 dark:hover:bg-gray-600
+                                                `}
                                                 onClick={() => handleSort('status')}
                                             >
                                                 Status{getSortIcon('status')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 cursor-pointer hover:bg-gray-100"
+                                                className={`
+                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
+                                                    text-gray-500 uppercase dark:text-gray-300
+                                                    hover:bg-gray-100 dark:hover:bg-gray-600
+                                                `}
                                                 onClick={() => handleSort('collection')}
                                             >
                                                 Collection{getSortIcon('collection')}
@@ -377,23 +476,23 @@ export default function BooksPage() {
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-200 bg-white">
+                                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-600 dark:bg-gray-800">
                                         {filteredBooks.map((book) => {
                                             const collection = collections.find((c) => c.id === book.collectionId);
                                             return (
-                                                <tr key={book.id}>
+                                                <tr key={book.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <Link
                                                             href={`/${dbId}/books/${book.id}`}
                                                             className={`
-                                                                text-blue-600 font-medium
-                                                                hover:text-blue-800
+                                                                font-medium text-blue-600
+                                                                hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300
                                                             `}
                                                         >
                                                             {book.title}
                                                         </Link>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-900">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
                                                         {book.author}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -419,7 +518,11 @@ export default function BooksPage() {
                                                             className="text-sm"
                                                         />
                                                     </td>
-                                                    <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                                                    <td
+                                                        className={`
+                                                            px-6 py-4 text-right text-sm font-medium whitespace-nowrap
+                                                        `}
+                                                    >
                                                         <button
                                                             onClick={() => {
                                                                 setEditingBook(book);
@@ -427,7 +530,7 @@ export default function BooksPage() {
                                                             }}
                                                             className={`
                                                                 mr-3 text-blue-600
-                                                                hover:text-blue-900
+                                                                hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300
                                                             `}
                                                         >
                                                             <PencilIcon className="h-4 w-4" />
@@ -436,7 +539,7 @@ export default function BooksPage() {
                                                             onClick={() => handleDeleteBook(book.id)}
                                                             className={`
                                                                 text-red-600
-                                                                hover:text-red-900
+                                                                hover:text-red-900 dark:text-red-400 dark:hover:text-red-300
                                                             `}
                                                         >
                                                             <TrashIcon className="h-4 w-4" />
@@ -449,7 +552,9 @@ export default function BooksPage() {
                                 </table>
                                 {filteredBooks.length === 0 && (
                                     <div className="py-8 text-center">
-                                        <p className="text-gray-500">No books found matching your filters.</p>
+                                        <p className="text-gray-500 dark:text-gray-400">
+                                            No books found matching your filters.
+                                        </p>
                                     </div>
                                 )}
                             </div>

@@ -75,27 +75,10 @@ export default function BookView() {
                 key={i}
                 className={`
                     h-5 w-5
-                    ${i < rating ? 'text-yellow-400' : 'text-gray-300'}
+                    ${i < rating ? 'text-yellow-400 dark:text-yellow-300' : 'text-gray-300 dark:text-gray-600'}
                 `}
             />
         ));
-    };
-
-    const getStatusColor = (status: BookStatus) => {
-        switch (status) {
-            case 'Read':
-                return 'bg-green-100 text-green-800';
-            case 'Reading':
-                return 'bg-blue-100 text-blue-800';
-            case 'TBR':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'DNF':
-                return 'bg-red-100 text-red-800';
-            case 'On Hold':
-                return 'bg-gray-100 text-gray-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
     };
 
     const statusOptions = [
@@ -114,8 +97,8 @@ export default function BookView() {
     if (!book) {
         return (
             <Layout dbId={dbId}>
-                <div className="flex min-h-screen items-center justify-center bg-gray-50">
-                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-400"></div>
                 </div>
             </Layout>
         );
@@ -137,8 +120,8 @@ export default function BookView() {
                     <button
                         onClick={() => router.push(`/${dbId}/books`)}
                         className={`
-                            inline-flex items-center text-gray-500
-                            hover:text-gray-700 mb-2
+                            mb-2 inline-flex items-center text-gray-500
+                            hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
                         `}
                     >
                         <ArrowLeftIcon className="mr-1 h-5 w-5" />
@@ -147,14 +130,15 @@ export default function BookView() {
 
                     {/* Title and Actions */}
                     <div className="flex items-center justify-between">
-                        <h1 className="text-3xl leading-tight font-bold text-gray-900">{book.title}</h1>
+                        <h1 className="text-3xl leading-tight font-bold text-gray-900 dark:text-white">{book.title}</h1>
                         <div className="flex space-x-3">
                             <button
                                 onClick={() => setIsEditFormOpen(true)}
                                 className={`
-                                    inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm
-                                    font-medium text-gray-700 shadow-sm
-                                    hover:bg-gray-50
+                                    inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2
+                                    text-sm font-medium text-gray-700 shadow-sm
+                                    hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200
+                                    dark:hover:bg-gray-600
                                 `}
                             >
                                 <PencilIcon className="mr-2 h-4 w-4" />
@@ -165,7 +149,7 @@ export default function BookView() {
                                 className={`
                                     inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2
                                     text-sm font-medium text-white shadow-sm
-                                    hover:bg-red-700
+                                    hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800
                                 `}
                             >
                                 <TrashIcon className="mr-2 h-4 w-4" />
@@ -176,7 +160,7 @@ export default function BookView() {
                 </div>
 
                 {/* Book Details */}
-                <div className="mt-6 rounded-lg bg-white shadow">
+                <div className="mt-6 rounded-lg bg-white shadow dark:bg-gray-800 dark:shadow-gray-900/20">
                     <div className="px-6 py-8">
                         <div
                             className={`
@@ -187,22 +171,30 @@ export default function BookView() {
                             {/* Left Column */}
                             <div className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Title</label>
-                                    <p className="mt-1 text-lg text-gray-900">{book.title}</p>
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Title
+                                    </label>
+                                    <p className="mt-1 text-lg text-gray-900 dark:text-white">{book.title}</p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Author</label>
-                                    <p className="mt-1 text-lg text-gray-900">{book.author}</p>
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Author
+                                    </label>
+                                    <p className="mt-1 text-lg text-gray-900 dark:text-white">{book.author}</p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Rating</label>
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Rating
+                                    </label>
                                     <div className="mt-1 flex">{renderStars(book.rating)}</div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Status</label>
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Status
+                                    </label>
                                     <div className="mt-1">
                                         <StyledDropdown
                                             value={book.status}
@@ -216,7 +208,9 @@ export default function BookView() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Collection</label>
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Collection
+                                    </label>
                                     <div className="mt-1">
                                         <StyledDropdown
                                             value={book.collectionId}
@@ -226,7 +220,9 @@ export default function BookView() {
                                         />
                                     </div>
                                     {collection && (
-                                        <p className="mt-2 text-sm text-gray-600">{collection.description}</p>
+                                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                                            {collection.description}
+                                        </p>
                                     )}
                                 </div>
                             </div>
@@ -234,28 +230,36 @@ export default function BookView() {
                             {/* Right Column */}
                             <div className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Review</label>
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Review
+                                    </label>
                                     <div className="mt-1">
                                         {book.review ? (
-                                            <div className="rounded-lg bg-gray-50 p-4">
-                                                <p className="whitespace-pre-wrap text-gray-900">{book.review}</p>
+                                            <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
+                                                <p className="whitespace-pre-wrap text-gray-900 dark:text-white">
+                                                    {book.review}
+                                                </p>
                                             </div>
                                         ) : (
-                                            <p className="text-gray-500 italic">No review yet</p>
+                                            <p className="text-gray-500 italic dark:text-gray-400">No review yet</p>
                                         )}
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Added</label>
-                                    <p className="mt-1 text-sm text-gray-900">
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Added
+                                    </label>
+                                    <p className="mt-1 text-sm text-gray-900 dark:text-white">
                                         {new Date(book.createdAt).toLocaleDateString()}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-500">Last Updated</label>
-                                    <p className="mt-1 text-sm text-gray-900">
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Last Updated
+                                    </label>
+                                    <p className="mt-1 text-sm text-gray-900 dark:text-white">
                                         {new Date(book.updatedAt).toLocaleDateString()}
                                     </p>
                                 </div>

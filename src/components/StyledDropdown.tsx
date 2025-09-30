@@ -18,39 +18,23 @@ interface StyledDropdownProps {
     showColors?: boolean;
     isStatusDropdown?: boolean;
     variant?: 'default' | 'status-pill' | 'compact';
+    disabled?: boolean;
 }
 
 const getStatusColor = (status: BookStatus) => {
     switch (status) {
         case 'Read':
-            return 'bg-green-100 text-green-800';
+            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
         case 'Reading':
-            return 'bg-blue-100 text-blue-800';
+            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
         case 'TBR':
-            return 'bg-yellow-100 text-yellow-800';
+            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
         case 'DNF':
-            return 'bg-red-100 text-red-800';
+            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
         case 'On Hold':
-            return 'bg-gray-100 text-gray-800';
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
         default:
-            return 'bg-gray-100 text-gray-800';
-    }
-};
-
-const getStatusBadgeColor = (status: BookStatus) => {
-    switch (status) {
-        case 'Read':
-            return 'bg-green-100 text-green-800 border-green-200';
-        case 'Reading':
-            return 'bg-blue-100 text-blue-800 border-blue-200';
-        case 'TBR':
-            return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-        case 'DNF':
-            return 'bg-red-100 text-red-800 border-red-200';
-        case 'On Hold':
-            return 'bg-gray-100 text-gray-800 border-gray-200';
-        default:
-            return 'bg-gray-100 text-gray-800 border-gray-200';
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
 };
 
@@ -63,21 +47,72 @@ export default function StyledDropdown({
     showColors = false,
     isStatusDropdown = false,
     variant = 'default',
+    disabled = false,
 }: StyledDropdownProps) {
     const selectedOption = options.find((option) => option.value === value);
 
-    // For status pill variant (book detail page)
+    // For status pill variant - colored pill button with native dropdown
     if (variant === 'status-pill' && isStatusDropdown) {
+        if (disabled) {
+            // Read-only display pill
+            return (
+                <span
+                    className={`
+                    inline-flex items-center rounded-full px-3 py-1 text-sm font-medium
+                    ${getStatusColor(value as BookStatus)}
+                    ${className}
+                `}
+                >
+                    {selectedOption?.label || placeholder}
+                </span>
+            );
+        }
+
+        // Interactive dropdown with colored pill styling
         return (
             <div className="relative inline-block">
                 <select
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     className={`
-                        inline-flex items-center rounded-full px-3 py-1 text-sm font-medium
+                        appearance-none rounded-full px-3 py-1 pr-8 text-sm font-medium cursor-pointer
                         ${getStatusColor(value as BookStatus)}
-                        border-0 focus:ring-2 focus:ring-blue-500
-                        appearance-none cursor-pointer pr-8
+                        focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none
+                        transition-all duration-150 border-0
+                        ${className}
+                    `}
+                    style={{
+                        backgroundImage: 'none',
+                    }}
+                >
+                    {options.map((option) => (
+                        <option
+                            key={option.value}
+                            value={option.value}
+                            className="bg-white text-black dark:bg-gray-800 dark:text-white"
+                        >
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+                <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-current" />
+            </div>
+        );
+    }
+
+    // For compact variant (table cells)
+    if (variant === 'compact') {
+        return (
+            <div className="relative">
+                <select
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className={`
+                        block w-full cursor-pointer appearance-none rounded-md border border-gray-300 px-2 py-1 pr-6
+                        text-xs transition-all duration-150
+                        focus:border-blue-500 focus:ring-blue-500
+                        dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400
+                        dark:focus:ring-blue-400
                         ${className}
                     `}
                 >
@@ -87,59 +122,14 @@ export default function StyledDropdown({
                         </option>
                     ))}
                 </select>
-                <ChevronDownIcon className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none text-current" />
+                <ChevronDownIcon
+                    className={`
+                        pointer-events-none absolute top-1/2 right-1 h-3 w-3 -translate-y-1/2 text-gray-500
+                        dark:text-gray-400
+                    `}
+                />
             </div>
         );
-    }
-
-    // For compact variant (table cells)
-    if (variant === 'compact') {
-        if (isStatusDropdown && showColors) {
-            return (
-                <div className="relative">
-                    <select
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        className={`
-                            inline-flex items-center rounded-md px-2 py-1 text-xs font-medium
-                            ${getStatusBadgeColor(value as BookStatus)}
-                            border focus:ring-2 focus:ring-blue-500
-                            appearance-none cursor-pointer pr-6 min-w-0
-                            ${className}
-                        `}
-                    >
-                        {options.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                    <ChevronDownIcon className="absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 pointer-events-none text-current" />
-                </div>
-            );
-        } else {
-            return (
-                <div className="relative">
-                    <select
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        className={`
-                            block w-full rounded-md border border-gray-300 px-2 py-1 text-xs
-                            focus:border-blue-500 focus:ring-blue-500
-                            appearance-none cursor-pointer pr-6
-                            ${className}
-                        `}
-                    >
-                        {options.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                    <ChevronDownIcon className="absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 pointer-events-none text-gray-500" />
-                </div>
-            );
-        }
     }
 
     // Default variant
@@ -149,9 +139,12 @@ export default function StyledDropdown({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 className={`
-                    block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-                    focus:border-blue-500 focus:ring-blue-500 sm:text-sm
-                    appearance-none cursor-pointer pr-10
+                    block w-full cursor-pointer appearance-none rounded-md border border-gray-300 px-3 py-2 pr-10
+                    shadow-sm transition-all duration-150
+                    focus:border-blue-500 focus:ring-blue-500
+                    sm:text-sm
+                    dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400
+                    dark:focus:ring-blue-400
                     ${className}
                 `}
             >
@@ -166,7 +159,12 @@ export default function StyledDropdown({
                     </option>
                 ))}
             </select>
-            <ChevronDownIcon className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none text-gray-500" />
+            <ChevronDownIcon
+                className={`
+                    pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-500
+                    dark:text-gray-400
+                `}
+            />
         </div>
     );
 }

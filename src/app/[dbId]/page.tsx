@@ -15,10 +15,10 @@ export default function DatabaseRedirect() {
     }, [dbId, router]);
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading your reading tracker...</p>
+                <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Loading your reading tracker...</p>
             </div>
         </div>
     );
