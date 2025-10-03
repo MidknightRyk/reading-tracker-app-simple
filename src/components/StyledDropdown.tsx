@@ -58,10 +58,10 @@ export default function StyledDropdown({
             return (
                 <span
                     className={`
-                    inline-flex items-center rounded-full px-3 py-1 text-sm font-medium
-                    ${getStatusColor(value as BookStatus)}
-                    ${className}
-                `}
+                        inline-flex items-center rounded-full px-3 py-1 text-sm font-medium
+                        ${getStatusColor(value as BookStatus)}
+                        ${className}
+                    `}
                 >
                     {selectedOption?.label || placeholder}
                 </span>
@@ -75,10 +75,11 @@ export default function StyledDropdown({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     className={`
-                        appearance-none rounded-full px-3 py-1 pr-8 text-sm font-medium cursor-pointer
+                        cursor-pointer appearance-none rounded-full px-3 py-1 pr-8 text-sm font-medium
                         ${getStatusColor(value as BookStatus)}
-                        focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none
-                        transition-all duration-150 border-0
+                        border-0 transition-all duration-150
+                        focus:ring-2 focus:ring-blue-500 focus:outline-none
+                        dark:focus:ring-blue-400
                         ${className}
                     `}
                     style={{
@@ -89,13 +90,18 @@ export default function StyledDropdown({
                         <option
                             key={option.value}
                             value={option.value}
-                            className="bg-white text-black dark:bg-gray-800 dark:text-white"
+                            className={`
+                                bg-white text-black
+                                dark:bg-gray-800 dark:text-white
+                            `}
                         >
                             {option.label}
                         </option>
                     ))}
                 </select>
-                <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-current" />
+                <ChevronDownIcon
+                    className={`pointer-events-none absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-current`}
+                />
             </div>
         );
     }

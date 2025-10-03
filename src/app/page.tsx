@@ -95,8 +95,13 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-150">
-            <div className="absolute right-4 top-4 z-10">
+        <div
+            className={`
+                min-h-screen bg-white transition-colors duration-150
+                dark:bg-gray-900
+            `}
+        >
+            <div className="absolute top-4 right-4 z-10">
                 <ThemeToggle />
             </div>
             <div
@@ -109,41 +114,91 @@ export default function Home() {
                 <div className="w-full max-w-md space-y-8">
                     {/* Header */}
                     <div className="text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60">
-                            <BookOpenIcon className="h-10 w-10 text-blue-600 dark:text-blue-300" />
+                        <div
+                            className={`
+                                mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100
+                                dark:bg-blue-900/60
+                            `}
+                        >
+                            <BookOpenIcon
+                                className={`
+                                    h-10 w-10 text-blue-600
+                                    dark:text-blue-300
+                                `}
+                            />
                         </div>
-                        <h1 className="mt-6 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        <h1
+                            className={`
+                                mt-6 text-3xl font-bold tracking-tight text-gray-900
+                                dark:text-white
+                            `}
+                        >
                             Reading Tracker
                         </h1>
-                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                        <p
+                            className={`
+                                mt-2 text-sm text-gray-600
+                                dark:text-gray-300
+                            `}
+                        >
                             Organize your books and track your reading progress
                         </p>
                     </div>
 
                     {/* Error Message */}
                     {error && (
-                        <div className="rounded-md bg-red-50 dark:bg-red-900/40 p-4">
-                            <div className="text-sm text-red-700 dark:text-red-300">{error}</div>
+                        <div
+                            className={`
+                                rounded-md bg-red-50 p-4
+                                dark:bg-red-900/40
+                            `}
+                        >
+                            <div
+                                className={`
+                                    text-sm text-red-700
+                                    dark:text-red-300
+                                `}
+                            >
+                                {error}
+                            </div>
                         </div>
                     )}
 
                     {/* Main Content */}
                     <div className="space-y-6">
                         {/* Create New Database */}
-                        <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-md ring-1 ring-gray-200 dark:ring-gray-700">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Start Fresh</h2>
-                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                        <div
+                            className={`
+                                rounded-lg bg-white p-6 shadow-md ring-1 ring-gray-200
+                                dark:bg-gray-800 dark:ring-gray-700
+                            `}
+                        >
+                            <h2
+                                className={`
+                                    text-lg font-semibold text-gray-900
+                                    dark:text-white
+                                `}
+                            >
+                                Start Fresh
+                            </h2>
+                            <p
+                                className={`
+                                    mt-2 text-sm text-gray-600
+                                    dark:text-gray-300
+                                `}
+                            >
                                 Create a new reading tracker with a randomly generated unique ID
                             </p>
                             <button
                                 onClick={handleCreateNew}
                                 disabled={isLoading}
                                 className={`
-                                    mt-4 flex w-full items-center justify-center rounded-md bg-blue-600 dark:bg-blue-700 px-4 py-2
+                                    mt-4 flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2
                                     text-sm font-semibold text-white shadow-sm
-                                    hover:bg-blue-500 dark:hover:bg-blue-600
+                                    hover:bg-blue-500
                                     focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none
                                     disabled:cursor-not-allowed disabled:opacity-50
+                                    dark:bg-blue-700 dark:hover:bg-blue-600
                                 `}
                             >
                                 {isLoading ? (
@@ -166,18 +221,36 @@ export default function Home() {
                         </div>
 
                         {/* Create Custom Database */}
-                        <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-md ring-1 ring-gray-200 dark:ring-gray-700">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <div
+                            className={`
+                                rounded-lg bg-white p-6 shadow-md ring-1 ring-gray-200
+                                dark:bg-gray-800 dark:ring-gray-700
+                            `}
+                        >
+                            <h2
+                                className={`
+                                    text-lg font-semibold text-gray-900
+                                    dark:text-white
+                                `}
+                            >
                                 Create Custom Database
                             </h2>
-                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                            <p
+                                className={`
+                                    mt-2 text-sm text-gray-600
+                                    dark:text-gray-300
+                                `}
+                            >
                                 Create a new database with your own custom ID
                             </p>
                             <div className="mt-4 space-y-3">
                                 <div>
                                     <label
                                         htmlFor="customDbId"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                                        className={`
+                                            block text-sm font-medium text-gray-700
+                                            dark:text-gray-200
+                                        `}
                                     >
                                         Custom Database ID
                                     </label>
@@ -189,13 +262,20 @@ export default function Home() {
                                         onKeyPress={(e) => handleKeyPress(e, 'custom')}
                                         placeholder="my-reading-tracker"
                                         className={`
-                                            mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 shadow-sm
+                                            mt-1 block w-full rounded-md border-gray-300 bg-white px-3 py-2
+                                            text-gray-900 placeholder-gray-400 shadow-sm
                                             focus:border-blue-500 focus:ring-blue-500 focus:outline-none
-                                            text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
                                             sm:text-sm
+                                            dark:border-gray-600 dark:bg-gray-900 dark:text-white
+                                            dark:placeholder-gray-500
                                         `}
                                     />
-                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <p
+                                        className={`
+                                            mt-1 text-xs text-gray-500
+                                            dark:text-gray-400
+                                        `}
+                                    >
                                         Only letters, numbers, hyphens, and underscores allowed. Minimum 3 characters.
                                     </p>
                                 </div>
@@ -203,11 +283,12 @@ export default function Home() {
                                     onClick={handleCreateCustom}
                                     disabled={isLoading || !customDbId.trim()}
                                     className={`
-                                        flex w-full items-center justify-center rounded-md bg-indigo-600 dark:bg-indigo-700 px-4 py-2
+                                        flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2
                                         text-sm font-semibold text-white shadow-sm
-                                        hover:bg-indigo-500 dark:hover:bg-indigo-600
+                                        hover:bg-indigo-500
                                         focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none
                                         disabled:cursor-not-allowed disabled:opacity-50
+                                        dark:bg-indigo-700 dark:hover:bg-indigo-600
                                     `}
                                 >
                                     {isLoading ? (
@@ -233,26 +314,56 @@ export default function Home() {
                         {/* Divider */}
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-300 dark:border-gray-700" />
+                                <div
+                                    className={`
+                                        w-full border-t border-gray-300
+                                        dark:border-gray-700
+                                    `}
+                                />
                             </div>
                             <div className="relative flex justify-center text-sm">
-                                <span className="bg-gray-50 dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">
+                                <span
+                                    className={`
+                                        bg-gray-50 px-2 text-gray-500
+                                        dark:bg-gray-900 dark:text-gray-400
+                                    `}
+                                >
                                     or
                                 </span>
                             </div>
                         </div>
 
                         {/* Use Existing Database */}
-                        <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-md ring-1 ring-gray-200 dark:ring-gray-700">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Continue Reading</h2>
-                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                        <div
+                            className={`
+                                rounded-lg bg-white p-6 shadow-md ring-1 ring-gray-200
+                                dark:bg-gray-800 dark:ring-gray-700
+                            `}
+                        >
+                            <h2
+                                className={`
+                                    text-lg font-semibold text-gray-900
+                                    dark:text-white
+                                `}
+                            >
+                                Continue Reading
+                            </h2>
+                            <p
+                                className={`
+                                    mt-2 text-sm text-gray-600
+                                    dark:text-gray-300
+                                `}
+                            >
                                 Enter your existing database ID to access your books
                             </p>
                             <div className="mt-4 space-y-3">
                                 <div>
                                     <label
                                         htmlFor="dbId"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                                        className={`
+                                            block text-sm font-medium text-gray-700
+                                            dark:text-gray-200
+                                        `}
                                     >
                                         Database ID
                                     </label>
@@ -264,10 +375,12 @@ export default function Home() {
                                         onKeyPress={(e) => handleKeyPress(e, 'existing')}
                                         placeholder="Enter your database ID"
                                         className={`
-                                            mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 shadow-sm
+                                            mt-1 block w-full rounded-md border-gray-300 bg-white px-3 py-2
+                                            text-gray-900 placeholder-gray-400 shadow-sm
                                             focus:border-blue-500 focus:ring-blue-500 focus:outline-none
-                                            text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
                                             sm:text-sm
+                                            dark:border-gray-600 dark:bg-gray-900 dark:text-white
+                                            dark:placeholder-gray-500
                                         `}
                                     />
                                 </div>
@@ -275,11 +388,12 @@ export default function Home() {
                                     onClick={handleUseExisting}
                                     disabled={isLoading || !existingDbId.trim()}
                                     className={`
-                                        flex w-full items-center justify-center rounded-md bg-gray-600 dark:bg-gray-700 px-4 py-2 text-sm
+                                        flex w-full items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm
                                         font-semibold text-white shadow-sm
-                                        hover:bg-gray-500 dark:hover:bg-gray-600
+                                        hover:bg-gray-500
                                         focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none
                                         disabled:cursor-not-allowed disabled:opacity-50
+                                        dark:bg-gray-700 dark:hover:bg-gray-600
                                     `}
                                 >
                                     {isLoading ? (
@@ -304,16 +418,36 @@ export default function Home() {
                     </div>
 
                     {/* Info */}
-                    <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 p-4">
+                    <div
+                        className={`
+                            rounded-lg bg-blue-50 p-4
+                            dark:bg-blue-950/40
+                        `}
+                    >
                         <div className="flex">
                             <div className="flex-shrink-0">
-                                <ClipboardDocumentIcon className="h-5 w-5 text-blue-400 dark:text-blue-300" />
+                                <ClipboardDocumentIcon
+                                    className={`
+                                        h-5 w-5 text-blue-400
+                                        dark:text-blue-300
+                                    `}
+                                />
                             </div>
                             <div className="ml-3">
-                                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                <h3
+                                    className={`
+                                        text-sm font-medium text-blue-800
+                                        dark:text-blue-200
+                                    `}
+                                >
                                     Keep Your Database ID Safe
                                 </h3>
-                                <div className="mt-2 text-sm text-blue-700 dark:text-blue-200">
+                                <div
+                                    className={`
+                                        mt-2 text-sm text-blue-700
+                                        dark:text-blue-200
+                                    `}
+                                >
                                     <p>
                                         Your database ID is your unique link to access your reading tracker. Save it
                                         somewhere safe or bookmark the URL once you're redirected. You can always copy
