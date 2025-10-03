@@ -44,7 +44,6 @@ export default function StyledDropdown({
     options,
     placeholder = 'Select an option',
     className = '',
-    showColors = false,
     isStatusDropdown = false,
     variant = 'default',
     disabled = false,
