@@ -29,6 +29,7 @@ export default [
             '*.config.ts',
             '*.config.mjs',
             'tsconfig.json',
+            'mongodb_seeds/',
         ],
     },
     ...compat.extends('next/core-web-vitals', 'next', 'next/typescript'),

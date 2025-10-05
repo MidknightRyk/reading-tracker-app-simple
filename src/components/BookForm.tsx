@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react';
-import { XMarkIcon, StarIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, StarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { Book, Collection, BookStatus } from '@/types';
 import StyledDropdown from './StyledDropdown';
@@ -13,11 +13,10 @@ interface BookFormProps {
     onSave: (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => void;
     book?: Book;
     collections: Collection[];
+    isLoading?: boolean;
 }
 
-const BOOK_STATUSES: BookStatus[] = ['TBR', 'Reading', 'Read', 'DNF', 'On Hold'];
-
-export default function BookForm({ isOpen, onClose, onSave, book, collections }: BookFormProps) {
+export default function BookForm({ isOpen, onClose, onSave, book, collections, isLoading = false }: BookFormProps) {
     const statusOptions = [
         { value: 'TBR', label: 'To Be Read' },
         { value: 'Reading', label: 'Currently Reading' },
@@ -297,15 +296,24 @@ export default function BookForm({ isOpen, onClose, onSave, book, collections }:
                                     >
                                         <button
                                             type="submit"
+                                            disabled={isLoading}
                                             className={`
                                                 inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2
                                                 text-sm font-semibold text-white shadow-sm
                                                 hover:bg-blue-500
+                                                disabled:cursor-not-allowed disabled:opacity-50
                                                 sm:ml-3 sm:w-auto
                                                 dark:bg-blue-500 dark:hover:bg-blue-400
                                             `}
                                         >
-                                            {book ? 'Update' : 'Add'} Book
+                                            {isLoading ? (
+                                                <>
+                                                    <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
+                                                    {book ? 'Updating...' : 'Adding...'}
+                                                </>
+                                            ) : (
+                                                `${book ? 'Update' : 'Add'} Book`
+                                            )}
                                         </button>
                                         <button
                                             type="button"

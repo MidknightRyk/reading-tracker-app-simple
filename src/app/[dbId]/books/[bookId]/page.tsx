@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Layout from '@/components/Layout';
 import BookForm from '@/components/BookForm';
 import StyledDropdown from '@/components/StyledDropdown';
-import { dataService } from '@/services/dataService';
+import { mongoDataService } from '@/services/mongoDataService';
 import { Book, Collection, BookStatus } from '@/types';
 import { PencilIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
@@ -19,11 +19,11 @@ export default function BookView() {
     const [collections, setCollections] = useState<Collection[]>([]);
     const [isEditFormOpen, setIsEditFormOpen] = useState(false);
 
-    useEffect(() => {
-        if (dbId && bookId) {
-            dataService.loadData(dbId);
-            const bookData = dataService.getBook(bookId);
-            const collectionsData = dataService.getCollections();
+    const loadData = useCallback(async () => {
+        try {
+            await mongoDataService.loadData(dbId);
+            const bookData = await mongoDataService.getBook(bookId);
+            const collectionsData = await mongoDataService.getCollections(dbId);
 
             if (!bookData) {
                 router.push(`/${dbId}/books`);
@@ -32,39 +32,68 @@ export default function BookView() {
 
             setBook(bookData);
             setCollections(collectionsData);
+        } catch (error) {
+            console.error('Error loading data:', error);
+            router.push(`/${dbId}/books`);
         }
     }, [dbId, bookId, router]);
 
-    const handleUpdateBook = (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
+    useEffect(() => {
+        if (dbId && bookId) {
+            loadData();
+        }
+    }, [dbId, bookId, loadData]);
+
+    const handleUpdateBook = async (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
         if (book) {
-            const updatedBook = dataService.updateBook(book.id, bookData);
-            if (updatedBook) {
-                setBook(updatedBook);
+            try {
+                const updatedBook = await mongoDataService.updateBook(book.id, bookData);
+                if (updatedBook) {
+                    setBook(updatedBook);
+                }
+                setIsEditFormOpen(false);
+            } catch (error) {
+                console.error('Error updating book:', error);
             }
         }
     };
 
-    const handleDeleteBook = () => {
+    const handleDeleteBook = async () => {
         if (book && confirm('Are you sure you want to delete this book?')) {
-            dataService.deleteBook(book.id);
-            router.push(`/${dbId}/books`);
-        }
-    };
-
-    const handleStatusChange = (newStatus: BookStatus) => {
-        if (book) {
-            const updatedBook = dataService.updateBook(book.id, { status: newStatus });
-            if (updatedBook) {
-                setBook(updatedBook);
+            try {
+                await mongoDataService.deleteBook(book.id);
+                router.push(`/${dbId}/books`);
+            } catch (error) {
+                console.error('Error deleting book:', error);
             }
         }
     };
 
-    const handleCollectionChange = (newCollectionId: string) => {
+    const handleStatusChange = async (newStatus: BookStatus) => {
         if (book) {
-            const updatedBook = dataService.updateBook(book.id, { collectionId: newCollectionId });
-            if (updatedBook) {
-                setBook(updatedBook);
+            try {
+                const updatedBook = await mongoDataService.updateBook(book.id, { ...book, status: newStatus });
+                if (updatedBook) {
+                    setBook(updatedBook);
+                }
+            } catch (error) {
+                console.error('Error updating book status:', error);
+            }
+        }
+    };
+
+    const handleCollectionChange = async (newCollectionId: string) => {
+        if (book) {
+            try {
+                const updatedBook = await mongoDataService.updateBook(book.id, {
+                    ...book,
+                    collectionId: newCollectionId,
+                });
+                if (updatedBook) {
+                    setBook(updatedBook);
+                }
+            } catch (error) {
+                console.error('Error updating book collection:', error);
             }
         }
     };

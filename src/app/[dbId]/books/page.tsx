@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -8,7 +8,8 @@ import BookForm from '@/components/BookForm';
 import CollectionForm from '@/components/CollectionForm';
 import CollectionsManagementModal from '@/components/CollectionsManagementModal';
 import StyledDropdown from '@/components/StyledDropdown';
-import { dataService } from '@/services/dataService';
+import Loading from '@/components/Loading';
+import { mongoDataService } from '@/services/mongoDataService';
 import { Book, Collection, BookStatus } from '@/types';
 import {
     PlusIcon,
@@ -20,6 +21,7 @@ import {
     CheckCircleIcon,
     XCircleIcon,
     PauseCircleIcon,
+    ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { BuildingLibraryIcon } from '@heroicons/react/24/outline';
@@ -41,6 +43,15 @@ export default function BooksPage() {
     const [isCollectionFormOpen, setIsCollectionFormOpen] = useState(false);
     const [isCollectionsManagementOpen, setIsCollectionsManagementOpen] = useState(false);
     const [editingBook, setEditingBook] = useState<Book | undefined>();
+
+    // Loading states
+    const [isAddingBook, setIsAddingBook] = useState(false);
+    const [isUpdatingBook, setIsUpdatingBook] = useState(false);
+    const [isDeletingBook, setIsDeletingBook] = useState<string | null>(null);
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
+    const [isUpdatingCollection, setIsUpdatingCollection] = useState<string | null>(null);
+    const [isAddingCollection, setIsAddingCollection] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
 
     // Dropdown options
     const statusFilterOptions = [
@@ -73,13 +84,6 @@ export default function BooksPage() {
         label: coll.title,
     }));
 
-    useEffect(() => {
-        if (dbId) {
-            dataService.loadData(dbId);
-            loadData();
-        }
-    }, [dbId]);
-
     const getStatusCounts = () => {
         const counts = {
             TBR: 0,
@@ -98,14 +102,27 @@ export default function BooksPage() {
 
     const statusCounts = getStatusCounts();
 
-    const loadData = () => {
-        // Reload data from localStorage to get latest changes
-        dataService.loadData(dbId);
-        const booksData = dataService.getBooks();
-        const collectionsData = dataService.getCollections();
-        setBooks(booksData);
-        setCollections(collectionsData);
-    };
+    const loadData = useCallback(async () => {
+        setIsLoadingData(true);
+        try {
+            await mongoDataService.loadData(dbId);
+            const booksData = await mongoDataService.getBooks(dbId);
+            const collectionsData = await mongoDataService.getCollections(dbId);
+            setBooks(booksData);
+            setCollections(collectionsData);
+        } catch (error) {
+            console.error('Error loading data:', error);
+        } finally {
+            setIsLoadingData(false);
+        }
+    }, [dbId]);
+
+    useEffect(() => {
+        if (dbId) {
+            mongoDataService.loadData(dbId);
+            loadData();
+        }
+    }, [dbId, loadData]);
 
     // Filter and sort books
     useEffect(() => {
@@ -171,49 +188,139 @@ export default function BooksPage() {
         }
     };
 
-    const handleAddBook = (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
-        dataService.addBook(bookData);
-        loadData();
-        setIsBookFormOpen(false);
-    };
-
-    const handleUpdateBook = (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
-        if (editingBook) {
-            dataService.updateBook(editingBook.id, bookData);
-            loadData();
+    const handleAddBook = async (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
+        setIsAddingBook(true);
+        try {
+            const newBook = await mongoDataService.addBook(bookData);
+            // Optimistically update the books state
+            setBooks((prevBooks) => [...prevBooks, newBook]);
             setIsBookFormOpen(false);
-            setEditingBook(undefined);
+        } catch (error) {
+            console.error('Error adding book:', error);
+            // On error, reload data to ensure consistency
+            await loadData();
+        } finally {
+            setIsAddingBook(false);
         }
     };
 
-    const handleDeleteBook = (bookId: string) => {
+    const handleUpdateBook = async (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
+        if (editingBook) {
+            setIsUpdatingBook(true);
+            try {
+                const updatedBook = await mongoDataService.updateBook(editingBook.id, bookData);
+                if (updatedBook) {
+                    // Optimistically update the books state
+                    setBooks((prevBooks) => prevBooks.map((book) => (book.id === editingBook.id ? updatedBook : book)));
+                } else {
+                    // If update failed, reload data
+                    await loadData();
+                }
+                setIsBookFormOpen(false);
+                setEditingBook(undefined);
+            } catch (error) {
+                console.error('Error updating book:', error);
+                // On error, reload data to ensure consistency
+                await loadData();
+            } finally {
+                setIsUpdatingBook(false);
+            }
+        }
+    };
+
+    const handleDeleteBook = async (bookId: string) => {
         if (confirm('Are you sure you want to delete this book?')) {
-            dataService.deleteBook(bookId);
-            loadData();
+            setIsDeletingBook(bookId);
+            try {
+                const success = await mongoDataService.deleteBook(bookId);
+                if (success) {
+                    // Optimistically update the books state
+                    setBooks((prevBooks) => prevBooks.filter((book) => book.id !== bookId));
+                } else {
+                    // If delete failed, reload data
+                    await loadData();
+                }
+            } catch (error) {
+                console.error('Error deleting book:', error);
+                // On error, reload data to ensure consistency
+                await loadData();
+            } finally {
+                setIsDeletingBook(null);
+            }
         }
     };
 
-    const handleStatusChange = (bookId: string, status: BookStatus) => {
+    const handleStatusChange = async (bookId: string, status: BookStatus) => {
         const book = books.find((b) => b.id === bookId);
         if (book) {
-            dataService.updateBook(bookId, { ...book, status });
-            loadData();
+            setIsUpdatingStatus(bookId);
+            // Optimistically update the UI first
+            setBooks((prevBooks) => prevBooks.map((b) => (b.id === bookId ? { ...b, status } : b)));
+
+            try {
+                const updatedBook = await mongoDataService.updateBook(bookId, { ...book, status });
+                if (!updatedBook) {
+                    // If update failed, reload data to ensure consistency
+                    await loadData();
+                }
+            } catch (error) {
+                console.error('Error updating book status:', error);
+                // On error, reload data to ensure consistency
+                await loadData();
+            } finally {
+                setIsUpdatingStatus(null);
+            }
         }
     };
 
-    const handleCollectionChange = (bookId: string, collectionId: string) => {
+    const handleCollectionChange = async (bookId: string, collectionId: string) => {
         const book = books.find((b) => b.id === bookId);
         if (book) {
-            dataService.updateBook(bookId, { ...book, collectionId });
-            loadData();
+            setIsUpdatingCollection(bookId);
+            // Optimistically update the UI first
+            setBooks((prevBooks) => prevBooks.map((b) => (b.id === bookId ? { ...b, collectionId } : b)));
+
+            try {
+                const updatedBook = await mongoDataService.updateBook(bookId, { ...book, collectionId });
+                if (!updatedBook) {
+                    // If update failed, reload data to ensure consistency
+                    await loadData();
+                }
+            } catch (error) {
+                console.error('Error updating book collection:', error);
+                // On error, reload data to ensure consistency
+                await loadData();
+            } finally {
+                setIsUpdatingCollection(null);
+            }
         }
     };
 
-    const handleAddCollection = (collectionData: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => {
-        dataService.addCollection(collectionData);
-        loadData();
-        setIsCollectionFormOpen(false);
+    const handleAddCollection = async (collectionData: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => {
+        setIsAddingCollection(true);
+        try {
+            const newCollection = await mongoDataService.addCollection(collectionData);
+            // Optimistically update the collections state
+            setCollections((prevCollections) => [...prevCollections, newCollection]);
+            setIsCollectionFormOpen(false);
+        } catch (error) {
+            console.error('Error adding collection:', error);
+            // On error, reload data to ensure consistency
+            await loadData();
+        } finally {
+            setIsAddingCollection(false);
+        }
     };
+
+    const handleCollectionsUpdate = useCallback(async () => {
+        // Only reload collections data, not books
+        try {
+            const collectionsData = await mongoDataService.getCollections(dbId);
+            setCollections(collectionsData);
+        } catch (error) {
+            console.error('Error loading collections:', error);
+        }
+    }, [dbId]);
 
     const renderStars = (rating: number) => {
         return Array.from({ length: 5 }, (_, i) => (
@@ -310,120 +417,105 @@ export default function BooksPage() {
 
     return (
         <Layout dbId={dbId}>
-            <div
-                className={`
-                    px-4
-                    sm:px-6
-                    lg:px-8
-                `}
-            >
-                <div className="sm:flex sm:items-center sm:justify-between">
-                    <div className="sm:flex-auto">
-                        <h1
-                            className={`
-                                text-2xl leading-6 font-semibold text-gray-900
-                                dark:text-white
-                            `}
-                        >
-                            Books
-                        </h1>
-                        <p
-                            className={`
-                                mt-2 text-sm text-gray-700
-                                dark:text-gray-300
-                            `}
-                        >
-                            A list of all the books in your reading tracker including their title, author, rating,
-                            status, and collection.
-                        </p>
-                    </div>
-                    <div
-                        className={`
-                            mt-4 flex space-x-3
-                            sm:mt-0 sm:ml-16 sm:flex-none
-                        `}
-                    >
-                        <button
-                            type="button"
-                            onClick={() => setIsCollectionsManagementOpen(true)}
-                            className={`
-                                inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm
-                                font-medium text-gray-700 shadow-sm
-                                hover:bg-gray-50
-                                dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600
-                            `}
-                        >
-                            <Cog6ToothIcon className="mr-2 h-4 w-4" />
-                            Manage Collections
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsBookFormOpen(true)}
-                            className={`
-                                inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2
-                                text-sm font-medium text-white shadow-sm
-                                hover:bg-blue-700
-                                dark:bg-blue-500 dark:hover:bg-blue-400
-                            `}
-                        >
-                            <PlusIcon className="mr-2 h-4 w-4" />
-                            Add Book
-                        </button>
-                    </div>
-                </div>
-
-                {/* Reading Status and Total Books */}
+            {isLoadingData ? (
+                <Loading message="Loading your reading tracker..." size="lg" className="py-32" />
+            ) : (
                 <div
                     className={`
-                        mt-10 mb-10 grid grid-cols-2 gap-5
-                        sm:grid-cols-3
-                        lg:grid-cols-6
+                        px-4
+                        sm:px-6
+                        lg:px-8
                     `}
                 >
-                    {/* Total Books Card */}
-                    <div
-                        className={`
-                            flex min-w-[120px] items-center rounded-lg bg-white py-3 pr-9 shadow
-                            dark:bg-gray-800
-                        `}
-                    >
-                        <div className="flex-shrink-0">
-                            <BuildingLibraryIcon
+                    <div className="sm:flex sm:items-center sm:justify-between">
+                        <div className="sm:flex-auto">
+                            <h1
                                 className={`
-                                    ml-7 h-7 w-7 text-blue-600
-                                    dark:text-blue-400
-                                `}
-                            />
-                        </div>
-                        <div className="ml-3 flex w-full flex-col items-center justify-center text-center">
-                            <div
-                                className={`
-                                    text-sm font-medium text-gray-500
-                                    dark:text-gray-400
-                                `}
-                            >
-                                Total
-                            </div>
-                            <div
-                                className={`
-                                    text-2xl font-bold text-gray-900
+                                    text-2xl leading-6 font-semibold text-gray-900
                                     dark:text-white
                                 `}
                             >
-                                {books.length}
-                            </div>
+                                Books
+                            </h1>
+                            <p
+                                className={`
+                                    mt-2 text-sm text-gray-700
+                                    dark:text-gray-300
+                                `}
+                            >
+                                A list of all the books in your reading tracker including their title, author, rating,
+                                status, and collection.
+                            </p>
+                        </div>
+                        <div
+                            className={`
+                                mt-4 flex space-x-3
+                                sm:mt-0 sm:ml-16 sm:flex-none
+                            `}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setIsCollectionsManagementOpen(true)}
+                                className={`
+                                    inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2
+                                    text-sm font-medium text-gray-700 shadow-sm
+                                    hover:bg-gray-50
+                                    dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600
+                                `}
+                            >
+                                <Cog6ToothIcon className="mr-2 h-4 w-4" />
+                                Manage Collections
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsBookFormOpen(true)}
+                                disabled={isAddingBook}
+                                className={`
+                                    inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2
+                                    text-sm font-medium text-white shadow-sm
+                                    hover:bg-blue-700
+                                    disabled:cursor-not-allowed disabled:opacity-50
+                                    dark:bg-blue-500 dark:hover:bg-blue-400
+                                `}
+                            >
+                                {isAddingBook ? (
+                                    <>
+                                        <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
+                                        Adding...
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlusIcon className="mr-2 h-4 w-4" />
+                                        Add Book
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
-                    {/* Reading Status Cards */}
-                    {Object.entries(statusCounts).map(([status, count]) => (
+
+                    {/* Reading Status and Total Books */}
+                    <div
+                        className={`
+                            mt-10 mb-10 grid grid-cols-2 gap-5
+                            sm:grid-cols-3
+                            lg:grid-cols-6
+                        `}
+                    >
+                        {/* Total Books Card */}
                         <div
-                            key={status}
                             className={`
                                 flex min-w-[120px] items-center rounded-lg bg-white py-3 pr-9 shadow
                                 dark:bg-gray-800
                             `}
                         >
-                            <div className="flex-shrink-0">{getStatusIcon(status)}</div>
+                            <div className="flex-shrink-0">
+                                <BuildingLibraryIcon
+                                    className={`
+                                        ml-7 h-7 w-7 text-blue-600
+                                        dark:text-blue-400
+                                    `}
+                                />
+                            </div>
                             <div className="ml-3 flex w-full flex-col items-center justify-center text-center">
                                 <div
                                     className={`
@@ -431,7 +523,7 @@ export default function BooksPage() {
                                         dark:text-gray-400
                                     `}
                                 >
-                                    {status === 'On Hold' ? 'Pending' : status}
+                                    Total
                                 </div>
                                 <div
                                     className={`
@@ -439,276 +531,359 @@ export default function BooksPage() {
                                         dark:text-white
                                     `}
                                 >
-                                    {count}
+                                    {books.length}
                                 </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-
-                {/* Filters */}
-                <div
-                    className={`
-                        mt-6 rounded-lg bg-white p-4 shadow
-                        dark:bg-gray-800
-                    `}
-                >
-                    <div
-                        className={`
-                            grid grid-cols-1 gap-4
-                            sm:grid-cols-2
-                        `}
-                    >
-                        <div>
-                            <label
-                                htmlFor="status-filter"
+                        {/* Reading Status Cards */}
+                        {Object.entries(statusCounts).map(([status, count]) => (
+                            <div
+                                key={status}
                                 className={`
-                                    block text-sm font-medium text-gray-700
-                                    dark:text-gray-300
+                                    flex min-w-[120px] items-center rounded-lg bg-white py-3 pr-9 shadow
+                                    dark:bg-gray-800
                                 `}
                             >
-                                Filter by Status
-                            </label>
-                            <div className="mt-1">
-                                <StyledDropdown
-                                    value={statusFilter}
-                                    onChange={(value) => setStatusFilter(value as BookStatus | 'all')}
-                                    options={statusFilterOptions}
-                                />
+                                <div className="flex-shrink-0">{getStatusIcon(status)}</div>
+                                <div className="ml-3 flex w-full flex-col items-center justify-center text-center">
+                                    <div
+                                        className={`
+                                            text-sm font-medium text-gray-500
+                                            dark:text-gray-400
+                                        `}
+                                    >
+                                        {status === 'On Hold' ? 'Pending' : status}
+                                    </div>
+                                    <div
+                                        className={`
+                                            text-2xl font-bold text-gray-900
+                                            dark:text-white
+                                        `}
+                                    >
+                                        {count}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label
-                                htmlFor="collection-filter"
-                                className={`
-                                    block text-sm font-medium text-gray-700
-                                    dark:text-gray-300
-                                `}
-                            >
-                                Filter by Collection
-                            </label>
-                            <div className="mt-1">
-                                <StyledDropdown
-                                    value={collectionFilter}
-                                    onChange={setCollectionFilter}
-                                    options={collectionFilterOptions}
-                                />
-                            </div>
-                        </div>
+                        ))}
                     </div>
-                </div>
 
-                {/* Table */}
-                <div className="mt-8 flow-root">
+                    {/* Filters */}
                     <div
                         className={`
-                            -mx-4 -my-2 overflow-x-auto
-                            sm:-mx-6
-                            lg:-mx-8
+                            mt-6 rounded-lg bg-white p-4 shadow
+                            dark:bg-gray-800
                         `}
                     >
                         <div
                             className={`
-                                inline-block min-w-full py-2 align-middle
-                                sm:px-6
-                                lg:px-8
+                                grid grid-cols-1 gap-4
+                                sm:grid-cols-2
                             `}
                         >
-                            <div
-                                className={`
-                                    ring-opacity-5 overflow-hidden shadow ring-1 ring-black
-                                    sm:rounded-lg
-                                    dark:ring-gray-700
-                                `}
-                            >
-                                <table
+                            <div>
+                                <label
+                                    htmlFor="status-filter"
                                     className={`
-                                        min-w-full divide-y divide-gray-300
-                                        dark:divide-gray-600
+                                        block text-sm font-medium text-gray-700
+                                        dark:text-gray-300
                                     `}
                                 >
-                                    <thead
-                                        className={`
-                                            bg-gray-50
-                                            dark:bg-gray-700
-                                        `}
-                                    >
-                                        <tr>
-                                            <th
-                                                scope="col"
-                                                className={`
-                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
-                                                    text-gray-500 uppercase
-                                                    hover:bg-gray-100
-                                                    dark:text-gray-300 dark:hover:bg-gray-600
-                                                `}
-                                                onClick={() => handleSort('title')}
-                                            >
-                                                Title{getSortIcon('title')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className={`
-                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
-                                                    text-gray-500 uppercase
-                                                    hover:bg-gray-100
-                                                    dark:text-gray-300 dark:hover:bg-gray-600
-                                                `}
-                                                onClick={() => handleSort('author')}
-                                            >
-                                                Author{getSortIcon('author')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className={`
-                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
-                                                    text-gray-500 uppercase
-                                                    hover:bg-gray-100
-                                                    dark:text-gray-300 dark:hover:bg-gray-600
-                                                `}
-                                                onClick={() => handleSort('rating')}
-                                            >
-                                                Rating{getSortIcon('rating')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className={`
-                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
-                                                    text-gray-500 uppercase
-                                                    hover:bg-gray-100
-                                                    dark:text-gray-300 dark:hover:bg-gray-600
-                                                `}
-                                                onClick={() => handleSort('status')}
-                                            >
-                                                Status{getSortIcon('status')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className={`
-                                                    cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wide
-                                                    text-gray-500 uppercase
-                                                    hover:bg-gray-100
-                                                    dark:text-gray-300 dark:hover:bg-gray-600
-                                                `}
-                                                onClick={() => handleSort('collection')}
-                                            >
-                                                Collection{getSortIcon('collection')}
-                                            </th>
-                                            <th scope="col" className="relative px-6 py-3">
-                                                <span className="sr-only">Actions</span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody
-                                        className={`
-                                            divide-y divide-gray-200 bg-white
-                                            dark:divide-gray-600 dark:bg-gray-800
-                                        `}
-                                    >
-                                        {filteredBooks.map((book) => {
-                                            const collection = collections.find((c) => c.id === book.collectionId);
-                                            return (
-                                                <tr
-                                                    key={book.id}
-                                                    className={`
-                                                        hover:bg-gray-50
-                                                        dark:hover:bg-gray-700
-                                                    `}
-                                                >
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <Link
-                                                            href={`/${dbId}/books/${book.id}`}
-                                                            className={`
-                                                                font-medium text-blue-600
-                                                                hover:text-blue-800
-                                                                dark:text-blue-400 dark:hover:text-blue-300
-                                                            `}
-                                                        >
-                                                            {book.title}
-                                                        </Link>
-                                                    </td>
-                                                    <td
-                                                        className={`
-                                                            px-6 py-4 whitespace-nowrap text-gray-900
-                                                            dark:text-white
-                                                        `}
-                                                    >
-                                                        {book.author}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="flex">{renderStars(book.rating)}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <StyledDropdown
-                                                            value={book.status}
-                                                            onChange={(value) =>
-                                                                handleStatusChange(book.id, value as BookStatus)
-                                                            }
-                                                            options={statusOptions}
-                                                            isStatusDropdown={true}
-                                                            showColors={true}
-                                                            variant="status-pill"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <StyledDropdown
-                                                            value={book.collectionId}
-                                                            onChange={(value) => handleCollectionChange(book.id, value)}
-                                                            options={collectionOptions}
-                                                            className="text-sm"
-                                                        />
-                                                    </td>
-                                                    <td
-                                                        className={`
-                                                            px-6 py-4 text-right text-sm font-medium whitespace-nowrap
-                                                        `}
-                                                    >
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingBook(book);
-                                                                setIsBookFormOpen(true);
-                                                            }}
-                                                            className={`
-                                                                mr-3 text-blue-600
-                                                                hover:text-blue-900
-                                                                dark:text-blue-400 dark:hover:text-blue-300
-                                                            `}
-                                                        >
-                                                            <PencilIcon className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteBook(book.id)}
-                                                            className={`
-                                                                text-red-600
-                                                                hover:text-red-900
-                                                                dark:text-red-400 dark:hover:text-red-300
-                                                            `}
-                                                        >
-                                                            <TrashIcon className="h-4 w-4" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                                {filteredBooks.length === 0 && (
-                                    <div className="py-8 text-center">
-                                        <p
-                                            className={`
-                                                text-gray-500
-                                                dark:text-gray-400
-                                            `}
-                                        >
-                                            No books found matching your filters.
-                                        </p>
-                                    </div>
-                                )}
+                                    Filter by Status
+                                </label>
+                                <div className="mt-1">
+                                    <StyledDropdown
+                                        value={statusFilter}
+                                        onChange={(value) => setStatusFilter(value as BookStatus | 'all')}
+                                        options={statusFilterOptions}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label
+                                    htmlFor="collection-filter"
+                                    className={`
+                                        block text-sm font-medium text-gray-700
+                                        dark:text-gray-300
+                                    `}
+                                >
+                                    Filter by Collection
+                                </label>
+                                <div className="mt-1">
+                                    <StyledDropdown
+                                        value={collectionFilter}
+                                        onChange={setCollectionFilter}
+                                        options={collectionFilterOptions}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Table */}
+                    <div className="mt-8 flow-root">
+                        {isAddingBook || isUpdatingBook ? (
+                            <Loading
+                                message={isAddingBook ? 'Adding book...' : 'Updating book...'}
+                                size="lg"
+                                className="py-16"
+                            />
+                        ) : (
+                            <div
+                                className={`
+                                    -mx-4 -my-2 overflow-x-auto
+                                    sm:-mx-6
+                                    lg:-mx-8
+                                `}
+                            >
+                                <div
+                                    className={`
+                                        inline-block min-w-full py-2 align-middle
+                                        sm:px-6
+                                        lg:px-8
+                                    `}
+                                >
+                                    <div
+                                        className={`
+                                            ring-opacity-5 overflow-hidden shadow ring-1 ring-black
+                                            sm:rounded-lg
+                                            dark:ring-gray-700
+                                        `}
+                                    >
+                                        <table
+                                            className={`
+                                                min-w-full divide-y divide-gray-300
+                                                dark:divide-gray-600
+                                            `}
+                                        >
+                                            <thead
+                                                className={`
+                                                    bg-gray-50
+                                                    dark:bg-gray-700
+                                                `}
+                                            >
+                                                <tr>
+                                                    <th
+                                                        scope="col"
+                                                        className={`
+                                                            cursor-pointer px-6 py-3 text-left text-xs font-medium
+                                                            tracking-wide text-gray-500 uppercase
+                                                            hover:bg-gray-100
+                                                            dark:text-gray-300 dark:hover:bg-gray-600
+                                                        `}
+                                                        onClick={() => handleSort('title')}
+                                                    >
+                                                        Title{getSortIcon('title')}
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className={`
+                                                            cursor-pointer px-6 py-3 text-left text-xs font-medium
+                                                            tracking-wide text-gray-500 uppercase
+                                                            hover:bg-gray-100
+                                                            dark:text-gray-300 dark:hover:bg-gray-600
+                                                        `}
+                                                        onClick={() => handleSort('author')}
+                                                    >
+                                                        Author{getSortIcon('author')}
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className={`
+                                                            cursor-pointer px-6 py-3 text-left text-xs font-medium
+                                                            tracking-wide text-gray-500 uppercase
+                                                            hover:bg-gray-100
+                                                            dark:text-gray-300 dark:hover:bg-gray-600
+                                                        `}
+                                                        onClick={() => handleSort('rating')}
+                                                    >
+                                                        Rating{getSortIcon('rating')}
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className={`
+                                                            cursor-pointer px-6 py-3 text-left text-xs font-medium
+                                                            tracking-wide text-gray-500 uppercase
+                                                            hover:bg-gray-100
+                                                            dark:text-gray-300 dark:hover:bg-gray-600
+                                                        `}
+                                                        onClick={() => handleSort('status')}
+                                                    >
+                                                        Status{getSortIcon('status')}
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className={`
+                                                            cursor-pointer px-6 py-3 text-left text-xs font-medium
+                                                            tracking-wide text-gray-500 uppercase
+                                                            hover:bg-gray-100
+                                                            dark:text-gray-300 dark:hover:bg-gray-600
+                                                        `}
+                                                        onClick={() => handleSort('collection')}
+                                                    >
+                                                        Collection{getSortIcon('collection')}
+                                                    </th>
+                                                    <th scope="col" className="relative px-6 py-3">
+                                                        <span className="sr-only">Actions</span>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody
+                                                className={`
+                                                    divide-y divide-gray-200 bg-white
+                                                    dark:divide-gray-600 dark:bg-gray-800
+                                                `}
+                                            >
+                                                {filteredBooks.map((book) => {
+                                                    return (
+                                                        <tr
+                                                            key={book.id}
+                                                            className={`
+                                                                hover:bg-gray-50
+                                                                dark:hover:bg-gray-700
+                                                            `}
+                                                        >
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <Link
+                                                                    href={`/${dbId}/books/${book.id}`}
+                                                                    className={`
+                                                                        font-medium text-blue-600
+                                                                        hover:text-blue-800
+                                                                        dark:text-blue-400 dark:hover:text-blue-300
+                                                                    `}
+                                                                >
+                                                                    {book.title}
+                                                                </Link>
+                                                            </td>
+                                                            <td
+                                                                className={`
+                                                                    px-6 py-4 whitespace-nowrap text-gray-900
+                                                                    dark:text-white
+                                                                `}
+                                                            >
+                                                                {book.author}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="flex">{renderStars(book.rating)}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="relative">
+                                                                    <StyledDropdown
+                                                                        value={book.status}
+                                                                        onChange={(value) =>
+                                                                            handleStatusChange(
+                                                                                book.id,
+                                                                                value as BookStatus
+                                                                            )
+                                                                        }
+                                                                        options={statusOptions}
+                                                                        isStatusDropdown={true}
+                                                                        showColors={true}
+                                                                        variant="status-pill"
+                                                                        disabled={isUpdatingStatus === book.id}
+                                                                    />
+                                                                    {isUpdatingStatus === book.id && (
+                                                                        <div
+                                                                            className={`
+                                                                                absolute inset-y-0 right-0 flex
+                                                                                items-center pr-3
+                                                                            `}
+                                                                        >
+                                                                            <ArrowPathIcon
+                                                                                className={`
+                                                                                    h-4 w-4 animate-spin text-gray-400
+                                                                                `}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="relative">
+                                                                    <StyledDropdown
+                                                                        value={book.collectionId}
+                                                                        onChange={(value) =>
+                                                                            handleCollectionChange(book.id, value)
+                                                                        }
+                                                                        options={collectionOptions}
+                                                                        className="text-sm"
+                                                                        disabled={isUpdatingCollection === book.id}
+                                                                    />
+                                                                    {isUpdatingCollection === book.id && (
+                                                                        <div
+                                                                            className={`
+                                                                                absolute inset-y-0 right-0 flex
+                                                                                items-center pr-3
+                                                                            `}
+                                                                        >
+                                                                            <ArrowPathIcon
+                                                                                className={`
+                                                                                    h-4 w-4 animate-spin text-gray-400
+                                                                                `}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td
+                                                                className={`
+                                                                    px-6 py-4 text-right text-sm font-medium
+                                                                    whitespace-nowrap
+                                                                `}
+                                                            >
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingBook(book);
+                                                                        setIsBookFormOpen(true);
+                                                                    }}
+                                                                    className={`
+                                                                        mr-3 text-blue-600
+                                                                        hover:text-blue-900
+                                                                        dark:text-blue-400 dark:hover:text-blue-300
+                                                                    `}
+                                                                >
+                                                                    <PencilIcon className="h-4 w-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteBook(book.id)}
+                                                                    disabled={isDeletingBook === book.id}
+                                                                    className={`
+                                                                        text-red-600
+                                                                        hover:text-red-900
+                                                                        disabled:cursor-not-allowed disabled:opacity-50
+                                                                        dark:text-red-400 dark:hover:text-red-300
+                                                                    `}
+                                                                >
+                                                                    {isDeletingBook === book.id ? (
+                                                                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <TrashIcon className="h-4 w-4" />
+                                                                    )}
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                        {filteredBooks.length === 0 && (
+                                            <div className="py-8 text-center">
+                                                <p
+                                                    className={`
+                                                        text-gray-500
+                                                        dark:text-gray-400
+                                                    `}
+                                                >
+                                                    No books found matching your filters.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Book Form Modal */}
             <BookForm
@@ -720,6 +895,7 @@ export default function BooksPage() {
                 onSave={editingBook ? handleUpdateBook : handleAddBook}
                 book={editingBook}
                 collections={collections}
+                isLoading={editingBook ? isUpdatingBook : isAddingBook}
             />
 
             {/* Collection Form Modal */}
@@ -727,13 +903,15 @@ export default function BooksPage() {
                 isOpen={isCollectionFormOpen}
                 onClose={() => setIsCollectionFormOpen(false)}
                 onSave={handleAddCollection}
+                isLoading={isAddingCollection}
             />
 
             {/* Collections Management Modal */}
             <CollectionsManagementModal
                 isOpen={isCollectionsManagementOpen}
                 onClose={() => setIsCollectionsManagementOpen(false)}
-                onUpdate={loadData}
+                onUpdate={handleCollectionsUpdate}
+                dbId={dbId}
             />
         </Layout>
     );

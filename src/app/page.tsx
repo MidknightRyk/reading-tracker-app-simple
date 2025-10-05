@@ -2,26 +2,42 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { dataService } from '@/services/dataService';
+import { mongoDataService } from '@/services/mongoDataService';
 import { BookOpenIcon, PlusIcon, ArrowRightIcon, ClipboardDocumentIcon, KeyIcon } from '@heroicons/react/24/outline';
 import ThemeToggle from '@/components/ThemeToggle';
+import { v4 as uuidv4 } from 'uuid';
+import { DEFAULT_COLLECTION_NAME, DEFAULT_COLLECTION_DESCRIPTION } from '@/lib/constants';
 
 export default function Home() {
     const router = useRouter();
     const [existingDbId, setExistingDbId] = useState('');
     const [customDbId, setCustomDbId] = useState('');
     const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isCreatingNew, setIsCreatingNew] = useState(false);
+    const [isCreatingCustom, setIsCreatingCustom] = useState(false);
+    const [isConnectingExisting, setIsConnectingExisting] = useState(false);
 
-    const handleCreateNew = async () => {
-        setIsLoading(true);
+    const createNewDatabase = async () => {
+        setIsCreatingNew(true);
         setError('');
+
         try {
-            const dbId = dataService.createNewDatabase();
-            router.push(`/${dbId}`);
+            const newDbId = uuidv4();
+
+            // Load the new database and create default collection
+            await mongoDataService.loadData(newDbId);
+
+            await mongoDataService.addCollection({
+                title: DEFAULT_COLLECTION_NAME,
+                description: DEFAULT_COLLECTION_DESCRIPTION,
+            });
+
+            router.push(`/${newDbId}`);
         } catch (err) {
+            console.error('Error creating new database:', err);
             setError('Failed to create new database. Please try again.');
-            setIsLoading(false);
+        } finally {
+            setIsCreatingNew(false);
         }
     };
 
@@ -43,44 +59,46 @@ export default function Home() {
             return;
         }
 
-        setIsLoading(true);
+        setIsCreatingCustom(true);
         setError('');
 
         try {
-            const success = dataService.createDatabaseWithId(customDbId.trim());
+            const success = await mongoDataService.createDatabaseWithId(customDbId.trim());
             if (success) {
                 router.push(`/${customDbId.trim()}`);
             } else {
                 setError('A database with this ID already exists. Please choose a different ID.');
-                setIsLoading(false);
             }
         } catch (err) {
+            console.error('Error creating custom database:', err);
             setError('Failed to create database. Please try again.');
-            setIsLoading(false);
+        } finally {
+            setIsCreatingCustom(false);
         }
     };
 
-    const handleUseExisting = () => {
+    const handleUseExisting = async () => {
         if (!existingDbId.trim()) {
             setError('Please enter a database ID');
             return;
         }
 
-        setIsLoading(true);
+        setIsConnectingExisting(true);
         setError('');
 
         try {
             // Try to load the existing database
-            const dbExists = dataService.databaseExists(existingDbId.trim());
+            const dbExists = await mongoDataService.databaseExists(existingDbId.trim());
             if (dbExists) {
                 router.push(`/${existingDbId.trim()}`);
             } else {
                 setError('Database ID not found. Please check the ID or create a new database.');
-                setIsLoading(false);
             }
         } catch (err) {
+            console.error('Error connecting to existing database:', err);
             setError('Invalid database ID format. Please check and try again.');
-            setIsLoading(false);
+        } finally {
+            setIsConnectingExisting(false);
         }
     };
 
@@ -190,8 +208,8 @@ export default function Home() {
                                 Create a new reading tracker with a randomly generated unique ID
                             </p>
                             <button
-                                onClick={handleCreateNew}
-                                disabled={isLoading}
+                                onClick={createNewDatabase}
+                                disabled={isCreatingNew}
                                 className={`
                                     mt-4 flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2
                                     text-sm font-semibold text-white shadow-sm
@@ -201,7 +219,7 @@ export default function Home() {
                                     dark:bg-blue-700 dark:hover:bg-blue-600
                                 `}
                             >
-                                {isLoading ? (
+                                {isCreatingNew ? (
                                     <>
                                         <div
                                             className={`
@@ -281,7 +299,7 @@ export default function Home() {
                                 </div>
                                 <button
                                     onClick={handleCreateCustom}
-                                    disabled={isLoading || !customDbId.trim()}
+                                    disabled={isCreatingCustom || !customDbId.trim()}
                                     className={`
                                         flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2
                                         text-sm font-semibold text-white shadow-sm
@@ -291,7 +309,7 @@ export default function Home() {
                                         dark:bg-indigo-700 dark:hover:bg-indigo-600
                                     `}
                                 >
-                                    {isLoading ? (
+                                    {isCreatingCustom ? (
                                         <>
                                             <div
                                                 className={`
@@ -386,7 +404,7 @@ export default function Home() {
                                 </div>
                                 <button
                                     onClick={handleUseExisting}
-                                    disabled={isLoading || !existingDbId.trim()}
+                                    disabled={isConnectingExisting || !existingDbId.trim()}
                                     className={`
                                         flex w-full items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm
                                         font-semibold text-white shadow-sm
@@ -396,7 +414,7 @@ export default function Home() {
                                         dark:bg-gray-700 dark:hover:bg-gray-600
                                     `}
                                 >
-                                    {isLoading ? (
+                                    {isConnectingExisting ? (
                                         <>
                                             <div
                                                 className={`
@@ -404,7 +422,7 @@ export default function Home() {
                                                     border-t-transparent
                                                 `}
                                             ></div>
-                                            Loading...
+                                            Connecting...
                                         </>
                                     ) : (
                                         <>
@@ -450,8 +468,8 @@ export default function Home() {
                                 >
                                     <p>
                                         Your database ID is your unique link to access your reading tracker. Save it
-                                        somewhere safe or bookmark the URL once you're redirected. You can always copy
-                                        it from the header when inside your tracker.
+                                        somewhere safe or bookmark the URL once you&apos;re redirected. You can always
+                                        copy it from the header when inside your tracker.
                                     </p>
                                 </div>
                             </div>

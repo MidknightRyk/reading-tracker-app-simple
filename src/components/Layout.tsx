@@ -23,6 +23,20 @@ export default function Layout({ children, dbId }: LayoutProps) {
         }
     };
 
+    const formatDbId = (id: string) => {
+        // If the ID is short enough, show it in full
+        if (id.length <= 12) {
+            return id;
+        }
+
+        // For longer IDs, show first 6 and last 4 characters
+        // Ensure no overlap by checking if we have enough characters
+        const startChars = Math.min(6, Math.floor((id.length - 3) / 2)); // Leave space for "..."
+        const endChars = Math.min(4, id.length - startChars - 3);
+
+        return `${id.slice(0, startChars)}...${id.slice(-endChars)}`;
+    };
+
     return (
         <div
             className={`
@@ -88,7 +102,7 @@ export default function Layout({ children, dbId }: LayoutProps) {
                                             dark:text-gray-300
                                         `}
                                     >
-                                        {dbId.slice(0, 8)}...{dbId.slice(-4)}
+                                        {formatDbId(dbId)}
                                     </code>
                                     <button
                                         onClick={copyToClipboard}

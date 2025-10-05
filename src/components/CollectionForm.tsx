@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Collection } from '@/types';
 
 interface CollectionFormProps {
@@ -10,9 +10,16 @@ interface CollectionFormProps {
     onClose: () => void;
     onSave: (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => void;
     collection?: Collection;
+    isLoading?: boolean;
 }
 
-export default function CollectionForm({ isOpen, onClose, onSave, collection }: CollectionFormProps) {
+export default function CollectionForm({
+    isOpen,
+    onClose,
+    onSave,
+    collection,
+    isLoading = false,
+}: CollectionFormProps) {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -189,15 +196,24 @@ export default function CollectionForm({ isOpen, onClose, onSave, collection }: 
                                     >
                                         <button
                                             type="submit"
+                                            disabled={isLoading}
                                             className={`
                                                 inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2
                                                 text-sm font-semibold text-white shadow-sm
                                                 hover:bg-blue-500
+                                                disabled:cursor-not-allowed disabled:opacity-50
                                                 sm:ml-3 sm:w-auto
                                                 dark:bg-blue-500 dark:hover:bg-blue-400
                                             `}
                                         >
-                                            {collection ? 'Update' : 'Add'} Collection
+                                            {isLoading ? (
+                                                <>
+                                                    <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
+                                                    {collection ? 'Updating...' : 'Adding...'}
+                                                </>
+                                            ) : (
+                                                `${collection ? 'Update' : 'Add'} Collection`
+                                            )}
                                         </button>
                                         <button
                                             type="button"
