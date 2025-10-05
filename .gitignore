@@ -42,3 +42,6 @@ next-env.d.ts
 
 # mongo seeds
 /mongodb_seeds
+
+# qodo
+.qodo
