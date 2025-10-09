@@ -644,7 +644,7 @@ export default function BooksPage() {
                                 >
                                     <div
                                         className={`
-                                            ring-opacity-5 overflow-hidden shadow ring-1 ring-black
+                                            ring-opacity-5 overflow-hidden shadow ring-1 ring-gray-300
                                             sm:rounded-lg
                                             dark:ring-gray-700
                                         `}
